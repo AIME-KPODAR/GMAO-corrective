@@ -1,0 +1,269 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Suivi Maintenance Corrective</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: indicateurs en haut, file des incidents à gauche, fiche et chronologie à droite (empilées sur mobile) */
+:root{
+  --bg:#f6f4f2; --surface:#ffffff; --fg:#241c18; --muted:#6c5f58; --line:#e0d8d3;
+  --accent:#b4390f; --accent-fg:#ffffff; --accent-soft:#fbe9e2;
+  --bad:#b3261e; --bad-soft:#fbe4e1; --warn:#8a5a00; --warn-soft:#fdf0d0; --good:#1d6b3a; --good-soft:#dff2e5; --info:#1f5f99; --info-soft:#e0edf8;
+  --font:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#1a1412; --surface:#241b18; --fg:#f0e8e4; --muted:#ac9d95; --line:#3a2d28;
+  --accent:#ff8a5c; --accent-fg:#2a0f05; --accent-soft:#3c211a;
+  --bad:#ff8a80; --bad-soft:#3a1d1b; --warn:#f2c14e; --warn-soft:#38300f; --good:#7fd79b; --good-soft:#14301f; --info:#8cc4f5; --info-soft:#172b3d; color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#1a1412; --surface:#241b18; --fg:#f0e8e4; --muted:#ac9d95; --line:#3a2d28;
+  --accent:#ff8a5c; --accent-fg:#2a0f05; --accent-soft:#3c211a;
+  --bad:#ff8a80; --bad-soft:#3a1d1b; --warn:#f2c14e; --warn-soft:#38300f; --good:#7fd79b; --good-soft:#14301f; --info:#8cc4f5; --info-soft:#172b3d; color-scheme:dark;}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px;line-height:1.5;
+  padding-block:20px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:8px 16px}
+h1{font-size:22px;margin:0;font-weight:600;letter-spacing:-.01em;text-wrap:balance}
+.sub{color:var(--muted);margin:2px 0 0}
+.stamp{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px 14px;min-width:0}
+.kpi .l{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.kpi .v{font-family:var(--mono);font-size:28px;font-weight:500;font-variant-numeric:tabular-nums;line-height:1.2}
+.kpi .n{font-size:12px;color:var(--muted)}
+.kpi.bad .v{color:var(--bad)} .kpi.warn .v{color:var(--warn)} .kpi.good .v{color:var(--good)}
+.main{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:900px){.main{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;min-width:0}
+.panel>h2{font-size:14px;margin:0;padding:12px 14px;border-bottom:1px solid var(--line);font-weight:600}
+.tools{display:flex;flex-wrap:wrap;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line)}
+input,select,textarea,button{font:inherit;color:var(--fg)}
+input,select,textarea{background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:6px 8px;min-width:0}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible,summary:focus-visible,tr:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{background:transparent;border:1px solid var(--line);border-radius:999px;padding:4px 11px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:640px}
+th{text-align:left;font-size:12px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.05em;padding:8px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--accent-soft)}
+tbody tr[aria-selected="true"]{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.name{font-weight:500}.loc{color:var(--muted);font-size:12px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pill{display:inline-block;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500;white-space:nowrap}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}.pill.warn{background:var(--warn-soft);color:var(--warn)}.pill.good{background:var(--good-soft);color:var(--good)}.pill.info{background:var(--info-soft);color:var(--info)}
+.btn{background:var(--accent);color:var(--accent-fg);border:0;border-radius:4px;padding:6px 12px;cursor:pointer;font-weight:500}
+.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
+.btn.small{padding:3px 9px;font-size:12px}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.detail{padding:14px;display:flex;flex-direction:column;gap:14px}
+.detail h3{margin:0;font-size:16px}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:0}
+.facts dt{color:var(--muted)}.facts dd{margin:0;font-family:var(--mono);font-size:13px;min-width:0;overflow-wrap:anywhere}
+.tl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.tl li{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;padding:8px 0;border-top:1px solid var(--line)}
+.tl .d{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.tl .wait{color:var(--muted)}
+form.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+form.grid label{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--muted)}
+form.grid .full{grid-column:1/-1}
+.box{border:1px solid var(--line);border-radius:6px;padding:12px;display:flex;flex-direction:column;gap:8px;background:var(--bg)}
+details.add{border-top:1px solid var(--line)}
+details.add summary{padding:12px 14px;cursor:pointer;font-weight:500}
+details.add form{padding:0 14px 14px}
+.empty{padding:20px 14px;color:var(--muted)}
+.note{font-size:12px;color:var(--muted)}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Suivi de maintenance corrective</h1>
+      <p class="sub">Déclaration des pannes, prise en charge et remise en service, avec les délais réels.</p>
+    </div>
+    <div class="stamp" id="today"></div>
+  </header>
+
+  <section class="kpis" id="kpis" aria-label="Indicateurs"></section>
+
+  <div class="main">
+    <section class="panel">
+      <h2>Incidents</h2>
+      <div class="tools">
+        <input id="q" type="search" placeholder="Rechercher un équipement ou un symptôme" aria-label="Rechercher">
+        <div class="chips" id="chips">
+          <button class="chip" data-f="actifs" aria-pressed="true">En cours</button>
+          <button class="chip" data-f="critique" aria-pressed="false">Critiques</button>
+          <button class="chip" data-f="resolu" aria-pressed="false">Résolus</button>
+          <button class="chip" data-f="all" aria-pressed="false">Tous</button>
+        </div>
+      </div>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>Incident</th><th>Priorité</th><th>Statut</th><th>Signalé</th><th>Durée</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="none" hidden>Aucun incident ne correspond à ce filtre.</div>
+      <details class="add">
+        <summary>Déclarer un incident</summary>
+        <form class="grid" id="addForm">
+          <label class="full">Équipement<input id="aEq" required placeholder="Ex. Pompe de circulation P-203"></label>
+          <label>Lieu<input id="aLieu" placeholder="Ex. Station de pompage"></label>
+          <label>Priorité<select id="aPrio"><option value="critique">Critique (arrêt de production)</option><option value="haute">Haute (fonctionnement dégradé)</option><option value="normale" selected>Normale</option></select></label>
+          <label class="full">Symptôme observé<input id="aDesc" required placeholder="Ex. Fuite importante au joint"></label>
+          <div class="full"><button class="btn" type="submit">Déclarer l'incident</button></div>
+        </form>
+      </details>
+    </section>
+
+    <section class="panel" id="detailPanel" aria-live="polite"></section>
+  </div>
+  <p class="note">Délais cibles de prise en charge : critique 1 h, haute 4 h, normale 24 h. Les incidents affichés au départ sont des exemples. Les modifications sont enregistrées dans ce navigateur uniquement.</p>
+</div>
+
+<script>
+(function(){
+  var KEY='maintenance-corrective-v1';
+  var MIN=60000,HR=3600000;
+  var SLA={critique:1*HR,haute:4*HR,normale:24*HR};
+  var PRIO={critique:['Critique','bad',0],haute:['Haute','warn',1],normale:['Normale','info',2]};
+  var ST={ouvert:['Ouvert','bad'],encours:['En intervention','warn'],resolu:['Remis en service','good']};
+  function now(){return Date.now()}
+  function esc(t){var d=document.createElement('div');d.textContent=t==null?'':String(t);return d.innerHTML}
+  function fdt(ms){return new Date(ms).toLocaleString('fr-FR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}
+  function dur(ms){
+    if(ms<0)ms=0;var m=Math.round(ms/MIN);
+    if(m<60)return m+' min';
+    var h=Math.floor(m/60),r=m%60;
+    if(h<48)return h+' h'+(r?' '+String(r).padStart(2,'0'):'');
+    return Math.floor(h/24)+' j '+(h%24)+' h';
+  }
+  function seed(){
+    var n=now();
+    return [
+      {id:1,eq:'Convoyeur à bande L1',lieu:'Ligne de production',desc:'Bande bloquée, moteur en surchauffe',prio:'critique',statut:'ouvert',sig:n-2.4*HR,deb:null,fin:null,cause:'',action:'',tech:''},
+      {id:2,eq:'Climatiseur salle serveur',lieu:'Salle serveur',desc:'Température en hausse, alarme haute',prio:'haute',statut:'encours',sig:n-5*HR,deb:n-3.5*HR,fin:null,cause:'',action:'',tech:'K. Mensah'},
+      {id:3,eq:'Onduleur 10 kVA',lieu:'Salle serveur',desc:'Bip continu, batterie faible signalée',prio:'normale',statut:'ouvert',sig:n-6*HR,deb:null,fin:null,cause:'',action:'',tech:''},
+      {id:4,eq:'Pompe de circulation P-203',lieu:'Station de pompage',desc:'Fuite au joint mécanique',prio:'critique',statut:'resolu',sig:n-26*HR,deb:n-25.2*HR,fin:n-19*HR,cause:'Joint mécanique usé',action:'Remplacement du joint et essai de pression',tech:'A. Kodjo'},
+      {id:5,eq:'Compresseur d\'air n°1',lieu:'Atelier A',desc:'Pression insuffisante',prio:'haute',statut:'resolu',sig:n-72*HR,deb:n-70*HR,fin:n-65*HR,cause:'Soupape de purge encrassée',action:'Nettoyage et réglage de la soupape',tech:'K. Mensah'},
+      {id:6,eq:'Groupe électrogène 60 kVA',lieu:'Local technique',desc:'Démarrage impossible',prio:'critique',statut:'resolu',sig:n-9*24*HR,deb:n-9*24*HR+0.5*HR,fin:n-9*24*HR+5*HR,cause:'Batterie de démarrage déchargée',action:'Remplacement de la batterie',tech:'A. Kodjo'}
+    ];
+  }
+  var data;
+  try{var raw=localStorage.getItem(KEY);data=raw?JSON.parse(raw):null}catch(e){data=null}
+  if(!Array.isArray(data))data=seed();
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(data))}catch(e){}}
+  var state={filter:'actifs',q:'',sel:null,confirmDel:false};
+  function find(id){for(var i=0;i<data.length;i++)if(data[i].id===id)return data[i];return null}
+  function active(i){return i.statut!=='resolu'}
+  function late(i){return i.statut==='ouvert'&&now()-i.sig>SLA[i.prio]}
+  (function(){var a=data.filter(active);state.sel=a.length?a[0].id:(data[0]?data[0].id:null)})();
+
+  function renderKpis(){
+    var act=data.filter(active),crit=act.filter(function(i){return i.prio==='critique'}).length;
+    var retard=data.filter(late).length;
+    var claimed=data.filter(function(i){return i.deb}),res=data.filter(function(i){return i.fin});
+    var avgClaim=claimed.length?claimed.reduce(function(s,i){return s+(i.deb-i.sig)},0)/claimed.length:0;
+    var avgDown=res.length?res.reduce(function(s,i){return s+(i.fin-i.sig)},0)/res.length:0;
+    var r30=res.filter(function(i){return now()-i.fin<=30*24*HR}).length;
+    document.getElementById('kpis').innerHTML=
+      '<div class="kpi '+(act.length?'warn':'good')+'"><div class="l">En cours</div><div class="v">'+act.length+'</div><div class="n">dont '+crit+' critique(s)</div></div>'+
+      '<div class="kpi '+(retard?'bad':'good')+'"><div class="l">Hors délai</div><div class="v">'+retard+'</div><div class="n">non pris en charge à temps</div></div>'+
+      '<div class="kpi"><div class="l">Prise en charge</div><div class="v">'+(claimed.length?dur(avgClaim):'—')+'</div><div class="n">délai moyen après signalement</div></div>'+
+      '<div class="kpi"><div class="l">Indisponibilité</div><div class="v">'+(res.length?dur(avgDown):'—')+'</div><div class="n">du signalement à la remise en service</div></div>'+
+      '<div class="kpi good"><div class="l">Résolus (30 j)</div><div class="v">'+r30+'</div><div class="n">remises en service</div></div>';
+  }
+
+  function renderRows(){
+    var q=state.q.toLowerCase();
+    var list=data.filter(function(i){
+      var f=state.filter;
+      var okF=f==='all'||(f==='actifs'&&active(i))||(f==='resolu'&&!active(i))||(f==='critique'&&i.prio==='critique'&&active(i));
+      return okF&&(!q||(i.eq+' '+i.desc+' '+i.lieu).toLowerCase().indexOf(q)>=0);
+    }).sort(function(a,b){
+      if(active(a)!==active(b))return active(a)?-1:1;
+      if(active(a)&&PRIO[a.prio][2]!==PRIO[b.prio][2])return PRIO[a.prio][2]-PRIO[b.prio][2];
+      return b.sig-a.sig;
+    });
+    document.getElementById('none').hidden=list.length>0;
+    document.getElementById('rows').innerHTML=list.map(function(i){
+      var p=PRIO[i.prio],s=ST[i.statut];
+      var d=i.fin?dur(i.fin-i.sig):dur(now()-i.sig);
+      return '<tr data-id="'+i.id+'" tabindex="0" aria-selected="'+(i.id===state.sel)+'">'+
+        '<td><div class="name">'+esc(i.eq)+'</div><div class="loc">'+esc(i.desc)+'</div></td>'+
+        '<td><span class="pill '+p[1]+'">'+p[0]+'</span></td>'+
+        '<td><span class="pill '+s[1]+'">'+s[0]+'</span>'+(late(i)?' <span class="pill bad">Hors délai</span>':'')+'</td>'+
+        '<td class="num">'+fdt(i.sig)+'</td><td class="num">'+d+'</td></tr>';
+    }).join('');
+  }
+
+  function renderDetail(){
+    var p=document.getElementById('detailPanel'),i=find(state.sel);
+    if(!i){p.innerHTML='<h2>Fiche incident</h2><div class="empty">Sélectionnez un incident pour voir son suivi.</div>';return}
+    var tl='<li><span class="d">'+fdt(i.sig)+'</span><span><strong>Incident signalé</strong><br>'+esc(i.desc)+'</span></li>';
+    tl+=i.deb?'<li><span class="d">'+fdt(i.deb)+'</span><span><strong>Pris en charge</strong>'+(i.tech?' par '+esc(i.tech):'')+'<br>Délai : '+dur(i.deb-i.sig)+'</span></li>':'<li><span class="d">—</span><span class="wait">En attente de prise en charge (cible '+dur(SLA[i.prio])+')</span></li>';
+    tl+=i.fin?'<li><span class="d">'+fdt(i.fin)+'</span><span><strong>Remis en service</strong><br>Indisponibilité totale : '+dur(i.fin-i.sig)+'</span></li>':'<li><span class="d">—</span><span class="wait">Remise en service à venir</span></li>';
+    var action='';
+    if(i.statut==='ouvert'){
+      action='<div class="box"><strong>Prendre en charge</strong><label class="note" for="tech">Technicien</label><input id="tech" placeholder="Nom du technicien"><button class="btn" id="claim">Démarrer l\'intervention</button></div>';
+    }else if(i.statut==='encours'){
+      action='<form class="box" id="resolveForm"><strong>Remettre en service</strong>'+
+        '<label class="note" for="cause">Cause identifiée</label><input id="cause" required placeholder="Ex. Roulement grippé">'+
+        '<label class="note" for="act">Action réalisée</label><input id="act" required placeholder="Ex. Remplacement du roulement">'+
+        '<button class="btn" type="submit">Confirmer la remise en service</button></form>';
+    }else{
+      action='<dl class="facts"><dt>Cause</dt><dd>'+esc(i.cause||'—')+'</dd><dt>Action</dt><dd>'+esc(i.action||'—')+'</dd></dl>';
+    }
+    p.innerHTML='<h2>Fiche incident</h2><div class="detail">'+
+      '<div><h3>'+esc(i.eq)+'</h3><div class="loc">'+esc(i.lieu)+'</div></div>'+
+      '<div><span class="pill '+PRIO[i.prio][1]+'">'+PRIO[i.prio][0]+'</span> <span class="pill '+ST[i.statut][1]+'">'+ST[i.statut][0]+'</span>'+(late(i)?' <span class="pill bad">Hors délai</span>':'')+'</div>'+
+      action+'<div><strong>Chronologie</strong><ul class="tl">'+tl+'</ul></div>'+
+      '<div><button class="btn ghost small danger" id="del">'+(state.confirmDel?'Confirmer la suppression':'Supprimer cet incident')+'</button></div></div>';
+  }
+
+  function renderAll(){renderKpis();renderRows();renderDetail()}
+  function pick(id){state.sel=id;state.confirmDel=false;renderRows();renderDetail()}
+
+  document.getElementById('today').textContent=new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('q').addEventListener('input',function(e){state.q=e.target.value;renderRows()});
+  document.getElementById('chips').addEventListener('click',function(e){
+    var b=e.target.closest('.chip');if(!b)return;state.filter=b.dataset.f;
+    Array.prototype.forEach.call(this.children,function(c){c.setAttribute('aria-pressed',String(c===b))});renderRows();
+  });
+  var tb=document.getElementById('rows');
+  tb.addEventListener('click',function(e){var tr=e.target.closest('tr');if(tr)pick(+tr.dataset.id)});
+  tb.addEventListener('keydown',function(e){if(e.key==='Enter'&&e.target.tagName==='TR')pick(+e.target.dataset.id)});
+  var dp=document.getElementById('detailPanel');
+  dp.addEventListener('click',function(e){
+    var i=find(state.sel);if(!i)return;
+    if(e.target.id==='claim'){i.statut='encours';i.deb=now();i.tech=document.getElementById('tech').value.trim();save();renderAll()}
+    if(e.target.id==='del'){
+      if(!state.confirmDel){state.confirmDel=true;renderDetail();return}
+      data=data.filter(function(x){return x.id!==i.id});
+      var a=data.filter(active);state.sel=a.length?a[0].id:(data[0]?data[0].id:null);state.confirmDel=false;save();renderAll();
+    }
+  });
+  dp.addEventListener('submit',function(e){
+    if(e.target.id!=='resolveForm')return;e.preventDefault();
+    var i=find(state.sel);if(!i)return;
+    i.statut='resolu';i.fin=now();i.cause=document.getElementById('cause').value.trim();i.action=document.getElementById('act').value.trim();
+    save();renderAll();
+  });
+  document.getElementById('addForm').addEventListener('submit',function(e){
+    e.preventDefault();
+    var id=data.reduce(function(m,x){return Math.max(m,x.id)},0)+1;
+    data.push({id:id,eq:document.getElementById('aEq').value.trim(),lieu:document.getElementById('aLieu').value.trim(),desc:document.getElementById('aDesc').value.trim(),
+      prio:document.getElementById('aPrio').value,statut:'ouvert',sig:now(),deb:null,fin:null,cause:'',action:'',tech:''});
+    state.sel=id;state.filter='actifs';state.confirmDel=false;
+    Array.prototype.forEach.call(document.getElementById('chips').children,function(c){c.setAttribute('aria-pressed',String(c.dataset.f==='actifs'))});
+    save();this.reset();renderAll();
+  });
+  renderAll();
+})();
+</script>
+
+</body></html>
